@@ -56,7 +56,7 @@ resource "aws_iam_role_policy" "lambda_s3_vector_access" {
           "bedrock:InvokeModel",
           "bedrock:InvokeModelWithResponseStream"
         ]
-        Resource = ["*"]
+        Resource = ["arn:aws:bedrock:*::foundation-model/amazon.nova-2-multimodal-embeddings-v1"]
       }
     ]
   })

@@ -45,7 +45,8 @@ def lambda_handler(event, context):
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
+            # Todo: Log the error somewhere safe
+            'body': "json.dumps({'error': 'Error during lambda search'})"
         }
 
 
