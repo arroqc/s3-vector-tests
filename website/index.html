@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Vector Search</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Image Vector Search</h1>
+            <p>Upload an image to find similar images</p>
+        </header>
+
+        <main>
+            <section class="upload-section">
+                <div class="upload-box" id="uploadBox">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <p>Drag and drop your image here or click to select</p>
+                    <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                </div>
+            </section>
+
+            <section id="statusSection" class="status-section" style="display: none;">
+                <div id="statusMessage" class="status-message"></div>
+                <div id="loadingSpinner" class="spinner" style="display: none;"></div>
+            </section>
+
+            <section id="resultsSection" class="results-section" style="display: none;">
+                <h2>Similar Images</h2>
+                <div id="resultsList" class="results-grid"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
