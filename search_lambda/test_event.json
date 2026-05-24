@@ -1,4 +1,4 @@
 {
-  "bucket": "s3-vector-test-image-uploads",
+  "bucket": "test-image-bucket",
   "key": "test.jpg"
 }
