@@ -1,9 +1,8 @@
-// Configuration - Update these when API Gateway is ready
+// Configuration - injected by Terraform template
 const CONFIG = {
-    // TODO: Update this URL when API Gateway is deployed
-    API_ENDPOINT: 'https://your-api-gateway-url.execute-api.region.amazonaws.com/prod/search',
-    S3_BUCKET: 'your-s3-bucket-name', // Update with your S3 bucket
-    S3_REGION: 'us-east-1', // Update with your region
+    API_ENDPOINT: `${API_GATEWAY_URL}/search`,
+    S3_BUCKET: S3_BUCKET,
+    S3_REGION: S3_REGION,
 };
 
 const uploadBox = document.getElementById('uploadBox');

@@ -38,6 +38,12 @@
         </main>
     </div>
 
+    <script>
+        // Configuration injected by Terraform
+        const API_GATEWAY_URL = '${api_gateway_url}';
+        const S3_BUCKET = '${s3_bucket}';
+        const S3_REGION = '${s3_region}';
+    </script>
     <script src="app.js"></script>
 </body>
 </html>
