@@ -1,78 +1,101 @@
 # Image Vector Search UI
 
-A simple static website for uploading images and finding similar ones using vector embeddings.
+A static website for uploading images and finding similar ones using vector embeddings. Configuration and deployment are automated via Terraform.
 
 ## Features
 
 - Drag-and-drop image upload
-- Real-time search for similar images
+- Real-time search for similar images using vector embeddings
 - Responsive design
 - Clean, modern UI
+- Automatic configuration injection via Terraform
 
-## Setup
+## Deployment
 
-### Quick Start
+### Production (via Terraform)
 
-1. **Update Configuration** in `app.js`:
-   ```javascript
-   const CONFIG = {
-       API_ENDPOINT: 'https://your-api-gateway-url...',
-       S3_BUCKET: 'your-bucket-name',
-       S3_REGION: 'us-east-1',
-   };
-   ```
+The website is deployed automatically as part of the Terraform infrastructure:
 
-2. **Serve locally** (for development):
-   ```bash
-   # Python 3
-   python -m http.server 8000
-   
-   # Or Node.js with http-server
-   npx http-server
-   ```
+```bash
+cd terraform
+terraform apply
+```
 
-   Then open `http://localhost:8000`
+This will:
+1. Create an HTTP API Gateway with Lambda integration
+2. Set up S3 bucket for website hosting
+3. Automatically inject the API endpoint, S3 bucket, and region into `index.html`
+4. Upload the rendered HTML to S3
 
-3. **Deploy to S3** (for production):
-   ```bash
-   aws s3 sync . s3://your-website-bucket --exclude ".git*"
-   ```
+After deployment, the Terraform outputs will show:
+- `api_gateway_endpoint` - Your API endpoint URL
+- `s3_bucket` - The image upload bucket
+- `s3_region` - The AWS region
+
+**No manual configuration needed.** Terraform handles everything.
+
+### Local Development
+
+For local testing:
+
+```bash
+# Python 3
+python -m http.server 8000
+
+# Or Node.js
+npx http-server
+```
+
+Then open `http://localhost:8000`
+
+**Note:** Local development won't have the API endpoint injected. You'll need to manually set `API_GATEWAY_URL`, `S3_BUCKET`, and `S3_REGION` in the browser console or modify `index.html` temporarily.
 
 ## Architecture
 
-### Flow
+### Files
 
-1. User selects/drags image → Stored in S3
-2. Frontend calls API Gateway endpoint with bucket + key
+- `index.html` - Main HTML with template variables for API configuration
+- `style.css` - Responsive design and styling
+- `app.js` - Image upload handling and API integration
+
+### Configuration
+
+Configuration values are injected by Terraform at deployment:
+
+```javascript
+// In index.html, Terraform injects:
+const API_GATEWAY_URL = '${api_gateway_url}';  // API Gateway endpoint
+const S3_BUCKET = '${s3_bucket}';               // S3 bucket for uploads
+const S3_REGION = '${s3_region}';               // AWS region
+```
+
+These are then used in `app.js`:
+
+```javascript
+const CONFIG = {
+    API_ENDPOINT: `${API_GATEWAY_URL}/search`,
+    S3_BUCKET: S3_BUCKET,
+    S3_REGION: S3_REGION,
+};
+```
+
+### API Flow
+
+1. User selects/drags image
+2. Frontend sends to API Gateway `/search` endpoint
 3. API Gateway invokes Lambda function
 4. Lambda processes image and returns similar images
 5. Results displayed in UI
 
-### File Structure
+### API Contract
 
-- `index.html` - Main HTML structure
-- `style.css` - Styling and responsive design
-- `app.js` - Upload handling and Lambda API integration
+The Lambda function expects:
+- **Method**: POST
+- **Path**: `/search`
+- **Body**: `{ "bucket": "...", "key": "..." }`
+- **Response**: `{ "nearest_neighbors": [...] }`
 
-## Next Steps
-
-1. **Set up API Gateway** for the Lambda function
-2. **Configure S3 pre-signed URLs** for browser uploads
-3. **Update `CONFIG`** in `app.js` with your endpoint
-4. **Deploy** the website to S3 or your preferred hosting
-
-## Configuration Details
-
-### API Endpoint Expected Format
-
-The API Gateway endpoint should:
-- Accept POST requests
-- Expect JSON body: `{ "bucket": "...", "key": "..." }`
-- Return JSON: `{ "nearest_neighbors": [...] }`
-
-### Result Format
-
-Each neighbor in the response should include:
+Each neighbor should include:
 ```json
 {
   "key": "image-key",
