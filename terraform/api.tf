@@ -30,6 +30,7 @@ resource "aws_apigatewayv2_route" "search_route" {
 }
 
 # Stage for the API
+# NOTE: HTTP APIs have limited throttling. For production, use WAF or REST API Gateway.
 resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.search_api.id
   name        = "$default"

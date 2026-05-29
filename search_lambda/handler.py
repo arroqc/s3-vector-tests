@@ -2,6 +2,10 @@ import json
 import base64
 import os
 import boto3
+import logging
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 s3_client = boto3.client('s3')
 bedrock_client = boto3.client('bedrock-runtime')
@@ -43,10 +47,10 @@ def lambda_handler(event, context):
         }
 
     except Exception as e:
+        logger.error(f"Search failed: {str(e)}", exc_info=True)
         return {
             'statusCode': 500,
-            # Todo: Log the error somewhere safe
-            'body': "json.dumps({'error': 'Error during lambda search'})"
+            'body': json.dumps({'error': 'Search service temporarily unavailable'})
         }
 
 

@@ -1,5 +1,7 @@
 # S3 Vectors Image Search
 
+⚠️ **TEST/DEMO PROJECT** - This is a demonstration project for learning purposes. **Do not use in production without significant security and infrastructure improvements.**
+
 A serverless image search application that uses vector embeddings to find similar images. Built with AWS services: S3 Vectors, Bedrock (Amazon Nova), Lambda, and API Gateway.
 
 ## Overview
@@ -353,22 +355,63 @@ Content-Type: application/json
 - Monitor Lambda execution time
 - Use S3 Intelligent-Tiering for archival
 
+## ⚠️ Production Readiness
+
+This is a **test/demo project**. The following issues must be addressed before production use:
+
+### Critical Issues
+- ❌ **No API authentication** - Anyone can invoke your API and incur costs
+- ❌ **CORS allows all origins** - Restrict to `allow_origins = ["https://yourdomain.com"]`
+- ❌ **No rate limiting** - HTTP API throttling not supported; use WAF or REST API
+- ❌ **Website publicly accessible** - Consider CloudFront with authentication
+
+### Recommended Production Changes
+1. **Add API Authentication**
+   - Use AWS Cognito for user management
+   - Or use Lambda Authorizer for custom auth
+   - Or use IAM for internal-only access
+
+2. **Implement CloudFront** 
+   - Cache static content
+   - Add WAF for rate limiting
+   - Force HTTPS
+
+3. **Enable Logging & Monitoring**
+   - CloudWatch logs with alerts
+   - API Gateway access logs
+   - Lambda error tracking
+
+4. **Add Cost Controls**
+   - Set up billing alerts
+   - Use AWS Budget notifications
+   - Monitor Lambda execution time
+
+5. **Security Improvements**
+   - Enable VPC Flow Logs
+   - Use AWS Secrets Manager for API keys
+   - Implement request signing
+   - Add input validation/sanitization
+
 ## Security
 
 ### What's Secure
 
 - ✅ Lambda in private VPC (no public IP)
 - ✅ VPC endpoints for AWS service access (no internet)
-- ✅ Security groups restrict traffic
+- ✅ Security groups restrict traffic (principle of least privilege)
 - ✅ IAM policies follow least privilege
 - ✅ S3 buckets encrypted at rest
+- ✅ XSS vulnerability fixed (DOM-safe rendering)
+- ✅ Proper error logging (no sensitive data exposure)
 
-### What to Improve for Production
+### Known Limitations (Test Project)
 
-- ⚠️ API Gateway allows anonymous access—add authentication
-- ⚠️ CORS allows all origins—restrict to your domain
-- ⚠️ No request throttling—add WAF or API Gateway rate limiting
-- ⚠️ Website S3 bucket is public—consider CloudFront
+- ⚠️ API Gateway allows anonymous access
+- ⚠️ CORS allows all origins
+- ⚠️ No request throttling (HTTP API limitation)
+- ⚠️ Website S3 bucket is publicly readable
+- ⚠️ No user authentication
+- ⚠️ Minimal input validation
 
 ## Troubleshooting
 

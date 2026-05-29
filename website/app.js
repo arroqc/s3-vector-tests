@@ -107,7 +107,12 @@ function displayResults(neighbors) {
     resultsList.innerHTML = '';
 
     if (neighbors.length === 0) {
-        resultsList.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #6c757d;">No similar images found</p>';
+        const emptyMsg = document.createElement('p');
+        emptyMsg.style.gridColumn = '1/-1';
+        emptyMsg.style.textAlign = 'center';
+        emptyMsg.style.color = '#6c757d';
+        emptyMsg.textContent = 'No similar images found';
+        resultsList.appendChild(emptyMsg);
         resultsSection.style.display = 'block';
         return;
     }
@@ -119,16 +124,28 @@ function displayResults(neighbors) {
         const distance = neighbor.distance ? neighbor.distance.toFixed(4) : 'N/A';
         const key = neighbor.metadata?.key || neighbor.key || 'Unknown';
 
-        resultItem.innerHTML = `
-            <div class="result-item-image">
-                <span>Image ${index + 1}</span>
-            </div>
-            <div class="result-item-info">
-                <div class="result-item-distance">Distance: ${distance}</div>
-                <div class="result-item-key">${key}</div>
-            </div>
-        `;
+        const imageDiv = document.createElement('div');
+        imageDiv.className = 'result-item-image';
+        const imageSpan = document.createElement('span');
+        imageSpan.textContent = `Image ${index + 1}`;
+        imageDiv.appendChild(imageSpan);
 
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'result-item-info';
+
+        const distanceDiv = document.createElement('div');
+        distanceDiv.className = 'result-item-distance';
+        distanceDiv.textContent = `Distance: ${distance}`;
+
+        const keyDiv = document.createElement('div');
+        keyDiv.className = 'result-item-key';
+        keyDiv.textContent = key;
+
+        infoDiv.appendChild(distanceDiv);
+        infoDiv.appendChild(keyDiv);
+
+        resultItem.appendChild(imageDiv);
+        resultItem.appendChild(infoDiv);
         resultsList.appendChild(resultItem);
     });
 
