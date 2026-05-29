@@ -160,9 +160,12 @@ After `terraform apply`, outputs show:
 api_gateway_endpoint = "https://xxxxx.execute-api.region.amazonaws.com"
 s3_bucket = "s3-vector-test-image-uploads"
 s3_region = "us-east-1"
+website_url = "http://s3-vector-test-website.s3-website-us-east-1.amazonaws.com"
 ```
 
-Your website is already live at the S3 website URL shown in outputs.
+Your website is live at the `website_url` output (note: HTTP only for test).
+
+**CORS Security**: CORS is restricted to the S3 website endpoint only. For production with HTTPS, use CloudFront or a custom domain.
 
 ### 4. Test the API
 
@@ -361,7 +364,7 @@ This is a **test/demo project**. The following issues must be addressed before p
 
 ### Critical Issues
 - ❌ **No API authentication** - Anyone can invoke your API and incur costs
-- ❌ **CORS allows all origins** - Restrict to `allow_origins = ["https://yourdomain.com"]`
+- ⚠️ **CORS restricted to S3 HTTP endpoint** - Fine for test, but HTTP only. For production with HTTPS, use CloudFront or custom domain
 - ❌ **No rate limiting** - HTTP API throttling not supported; use WAF or REST API
 - ❌ **Website publicly accessible** - Consider CloudFront with authentication
 

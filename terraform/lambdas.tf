@@ -78,7 +78,8 @@ resource "aws_lambda_function" "search_lambda" {
 
   environment {
     variables = {
-      INDEX_PATH = aws_s3vectors_index.main_index.index_arn
+      INDEX_PATH    = aws_s3vectors_index.main_index.index_arn
+      UPLOAD_BUCKET = aws_s3_bucket.s3-vector-test-image-uploads.id
     }
   }
   layers = [aws_lambda_layer_version.lambda_deps.arn]

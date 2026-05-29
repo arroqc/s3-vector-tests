@@ -11,23 +11,98 @@ s3_client = boto3.client('s3')
 bedrock_client = boto3.client('bedrock-runtime')
 
 
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+
+
 def lambda_handler(event, context):
     """
-    Event should contain:
-    {
-        "bucket": "s3-bucket-name",
-        "key": "path/to/image.jpg"
-    }
+    Routes requests to /search or /presign endpoints
+    """
+    path = event.get('rawPath', '/')
+
+    if path == '/presign':
+        return handle_presign(event, context)
+    elif path == '/search':
+        return handle_search(event, context)
+    else:
+        return {
+            'statusCode': 404,
+            'body': json.dumps({'error': 'Endpoint not found'})
+        }
+
+
+def handle_presign(event, context):
+    """
+    Generate a pre-signed URL for S3 upload
+    Expects: {"filename": "image.jpg", "size": 1024}
     """
     try:
-        bucket = event.get('bucket')
-        key = event.get('key')
+        body = json.loads(event.get('body', '{}'))
+        filename = body.get('filename')
+        file_size = body.get('size', 0)
 
-        if not bucket or not key:
+        if not filename:
             return {
                 'statusCode': 400,
-                'body': json.dumps({'error': 'bucket and key required'})
+                'body': json.dumps({'error': 'filename required'})
             }
+
+        # Validate file size
+        if file_size > MAX_FILE_SIZE:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'error': f'File too large. Max size is {MAX_FILE_SIZE / 1024 / 1024:.0f} MB'})
+            }
+
+        # Validate file extension
+        allowed_extensions = ('.jpg', '.jpeg', '.png', '.gif', '.webp')
+        if not any(filename.lower().endswith(ext) for ext in allowed_extensions):
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'error': f'Only image files allowed: {", ".join(allowed_extensions)}'})
+            }
+
+        bucket = os.environ.get('UPLOAD_BUCKET')
+        key = f"uploads/{filename}"
+
+        # Generate pre-signed URL (valid for 15 minutes)
+        presigned_url = s3_client.generate_presigned_url(
+            'put_object',
+            Params={
+                'Bucket': bucket,
+                'Key': key,
+                'ContentType': 'image/*'
+            },
+            ExpiresIn=900  # 15 minutes
+        )
+
+        logger.info(f"Generated pre-signed URL for {filename}")
+        return {
+            'statusCode': 200,
+            'body': json.dumps({
+                'presigned_url': presigned_url,
+                'bucket': bucket,
+                'key': key
+            })
+        }
+
+    except Exception as e:
+        logger.error(f"Presign failed: {str(e)}", exc_info=True)
+        return {
+            'statusCode': 500,
+            'body': json.dumps({'error': 'Failed to generate upload URL'})
+        }
+
+
+def handle_search(event, context):
+    """
+    Search for similar images
+    Expects: {"bucket": "...", "key": "..."}
+    """
+    try:
+        body = json.loads(event.get('body', '{}'))
+        bucket = body.get('bucket')
+        key = body.get('key')
 
         # Get embedding from Bedrock Nova
         image_base64 = load_image_as_base64(bucket, key)

@@ -69,13 +69,61 @@ async function handleImageUpload(file) {
 }
 
 async function uploadToS3(file) {
-    // TODO: Once API Gateway is set up, you can:
-    // 1. Create an endpoint that returns a pre-signed URL
-    // 2. Or handle S3 upload through the same API endpoint
+    // Validate file size (10 MB max)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+        const maxSizeMB = Math.round(MAX_FILE_SIZE / 1024 / 1024);
+        throw new Error(`File too large. Maximum size is ${maxSizeMB} MB`);
+    }
 
-    // For now, this is a placeholder
-    // You'll need to implement S3 upload via pre-signed URL or through your API Gateway
-    throw new Error('S3 upload not yet implemented. Set up API Gateway endpoint to get pre-signed URL.');
+    // Validate file type
+    const allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowed_types.includes(file.type)) {
+        throw new Error('Only image files (JPG, PNG, GIF, WebP) are supported');
+    }
+
+    try {
+        // Step 1: Request pre-signed URL from Lambda
+        const presignResponse = await fetch(`${CONFIG.API_ENDPOINT.split('/search')[0]}/presign`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                filename: file.name,
+                size: file.size
+            })
+        });
+
+        if (!presignResponse.ok) {
+            const error = await presignResponse.json();
+            throw new Error(error.error || 'Failed to get upload URL');
+        }
+
+        const presignData = await presignResponse.json();
+        const presignedUrl = presignData.presigned_url;
+        const s3Key = presignData.key;
+
+        // Step 2: Upload to S3 using pre-signed URL
+        const uploadResponse = await fetch(presignedUrl, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': file.type,
+            },
+            body: file
+        });
+
+        if (!uploadResponse.ok) {
+            throw new Error(`S3 upload failed: ${uploadResponse.statusText}`);
+        }
+
+        console.log(`File uploaded to S3: ${s3Key}`);
+        return s3Key;
+
+    } catch (error) {
+        console.error('Upload error:', error);
+        throw error;
+    }
 }
 
 async function callSearchLambda(s3Key) {

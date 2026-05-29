@@ -29,6 +29,13 @@ resource "aws_apigatewayv2_route" "search_route" {
   target    = "integrations/${aws_apigatewayv2_integration.search_lambda_integration.id}"
 }
 
+# Route to presign endpoint for S3 uploads
+resource "aws_apigatewayv2_route" "presign_route" {
+  api_id    = aws_apigatewayv2_api.search_api.id
+  route_key = "POST /presign"
+  target    = "integrations/${aws_apigatewayv2_integration.search_lambda_integration.id}"
+}
+
 # Stage for the API
 # NOTE: HTTP APIs have limited throttling. For production, use WAF or REST API Gateway.
 resource "aws_apigatewayv2_stage" "default" {
@@ -119,4 +126,9 @@ output "s3_bucket" {
 output "s3_region" {
   description = "AWS region"
   value       = data.aws_region.current.name
+}
+
+output "website_url" {
+  description = "Website S3 endpoint (HTTP - use CloudFront for HTTPS in production)"
+  value       = "http://${aws_s3_bucket.website.bucket_regional_domain_name}"
 }

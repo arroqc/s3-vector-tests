@@ -98,3 +98,19 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "s3-vector-test-im
     }
   }
 }
+
+# CORS configuration for browser-based uploads
+# NOTE: Restricted to S3 website endpoint. For production with HTTPS, use CloudFront or custom domain.
+resource "aws_s3_bucket_cors_configuration" "s3-vector-test-image-uploads-cors" {
+  bucket = aws_s3_bucket.s3-vector-test-image-uploads.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["PUT", "POST"]
+    allowed_origins = [
+      "http://${aws_s3_bucket.website.bucket_regional_domain_name}"
+    ]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3000
+  }
+}
