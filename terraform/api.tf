@@ -1,6 +1,3 @@
-# Get current AWS region
-data "aws_region" "current" {}
-
 # HTTP API Gateway for vector search service
 resource "aws_apigatewayv2_api" "search_api" {
   name          = "vector-search-api"
@@ -97,7 +94,7 @@ resource "local_file" "website_index" {
   content = templatefile("${path.module}/../website/index.html", {
     api_gateway_url = aws_apigatewayv2_stage.default.invoke_url
     s3_bucket       = aws_s3_bucket.s3-vector-test-image-uploads.id
-    s3_region       = data.aws_region.current.name
+    s3_region       = var.aws_region
   })
 }
 
@@ -125,7 +122,7 @@ output "s3_bucket" {
 
 output "s3_region" {
   description = "AWS region"
-  value       = data.aws_region.current.name
+  value       = var.aws_region
 }
 
 output "website_url" {
