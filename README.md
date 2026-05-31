@@ -2,7 +2,13 @@
 
 ⚠️ **TEST/DEMO PROJECT** - This is a demonstration project for learning purposes. **Do not use in production without significant security and infrastructure improvements.**
 
-A serverless image search application that uses vector embeddings to find similar images. Built with AWS services: S3 Vectors, Bedrock (Amazon Nova), Lambda, and API Gateway.
+## Purpose
+
+This project was built to:
+
+1. **Test S3 Vectors & Bedrock** - Build a simple, real-world setup to explore S3 Vectors after AWS SAA certification and understand how Bedrock embeddings work in practice
+2. **End-to-End Architecture** - Create a complete serverless application with infrastructure-as-code to demonstrate cloud architecture concepts
+3. **Leverage Claude for Development** - Use Claude to help build the lesser-known parts (frontend, security reviews, etc.) and see how AI can accelerate development
 
 ## Overview
 
