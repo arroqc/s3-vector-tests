@@ -17,38 +17,44 @@ Everything is fully serverless and infrastructure-as-code with Terraform.
 
 ## Architecture
 
-```
-┌─────────────────┐
-│   Browser       │
-│  (index.html)   │
-└────────┬────────┘
-         │ HTTP
-         ▼
-┌──────────────────────┐
-│   API Gateway        │
-│  (HTTP API)          │
-└────────┬─────────────┘
-         │ AWS Service Integration
-         ▼
-┌──────────────────────┐
-│  Lambda Function     │
-│  (handler.py)        │
-└────────┬─────────────┘
-         │
-         ├──────────────────┐
-         │                  │
-         ▼                  ▼
-    ┌────────┐         ┌──────────────┐
-    │ Bedrock│         │ S3 Vectors   │
-    │ (Nova) │         │ (Embeddings) │
-    └────────┘         └──────────────┘
-         │                  │
-         └──────────────────┤
-                            │
-                     ┌──────▼──────┐
-                     │ S3 Buckets  │
-                     │  (Images)   │
-                     └─────────────┘
+```mermaid
+---
+config:
+  layout: elk
+---
+graph LR
+    user["👤 User"]
+    website["🌐 S3 Website"]
+    apiGateway["⚙️ API Gateway"]
+    lambda["⚡ Lambda"]
+    s3Bucket["💾 S3 Bucket"]
+    vectorDB["🔍 Vector DB"]
+    bedrock["🤖 Bedrock"]
+
+    user -->|uploads image| website
+    website -->|HTTP request| apiGateway
+    apiGateway -->|invokes| lambda
+    lambda -->|reads image| s3Bucket
+    lambda -->|embedding| bedrock
+    lambda -->|indexing & query| vectorDB
+    lambda -->|response| apiGateway
+    apiGateway -->|HTTP response| website
+    website -->|display result| user
+
+    classDef userNode stroke:#fb7185,fill:#fff1f2
+    classDef webNode stroke:#38bdf8,fill:#f0f9ff
+    classDef apiNode stroke:#a78bfa,fill:#f5f3ff
+    classDef computeNode stroke:#facc15,fill:#fefce8
+    classDef storageNode stroke:#2dd4bf,fill:#f0fdfa
+    classDef aiNode stroke:#ec4899,fill:#fce7f3
+
+    class user userNode
+    class website webNode
+    class apiGateway apiNode
+    class lambda computeNode
+    class s3Bucket storageNode
+    class vectorDB storageNode
+    class bedrock aiNode
 ```
 
 ### Components
