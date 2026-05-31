@@ -103,7 +103,7 @@ resource "aws_vpc_endpoint" "bedrock" {
   subnet_ids          = [aws_subnet.private_subnet.id]
   security_group_ids  = [aws_security_group.bedrock_endpoint.id]
   private_dns_enabled = true
-  
+
 
   tags = {
     Name = "bedrock-interface-endpoint"

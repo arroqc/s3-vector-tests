@@ -15,10 +15,10 @@ resource "aws_apigatewayv2_api" "search_api" {
 
 # Integration between API Gateway and Lambda
 resource "aws_apigatewayv2_integration" "search_lambda_integration" {
-  api_id             = aws_apigatewayv2_api.search_api.id
-  integration_type   = "AWS_PROXY"
-  integration_method = "POST"
-  integration_uri    = aws_lambda_function.search_lambda.invoke_arn
+  api_id                 = aws_apigatewayv2_api.search_api.id
+  integration_type       = "AWS_PROXY"
+  integration_method     = "POST"
+  integration_uri        = aws_lambda_function.search_lambda.invoke_arn
   payload_format_version = "2.0"
 }
 
@@ -74,10 +74,10 @@ resource "aws_s3_bucket_policy" "website_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
+        Effect    = "Allow"
         Principal = "*"
-        Action   = "s3:GetObject"
-        Resource = "${aws_s3_bucket.website.arn}/*"
+        Action    = "s3:GetObject"
+        Resource  = "${aws_s3_bucket.website.arn}/*"
       }
     ]
   })
