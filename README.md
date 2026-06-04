@@ -156,7 +156,7 @@ terraform apply
 ```
 
 This will create:
-- ✅ HTTP API Gateway with `/search` endpoint
+- ✅ HTTP API Gateway with `/search` and `/presign` endpoints
 - ✅ Lambda function in private VPC
 - ✅ S3 buckets (images, website, deployments)
 - ✅ S3 Vectors index for embeddings
@@ -197,15 +197,24 @@ curl -X POST https://xxxxx.execute-api.region.amazonaws.com/search \
 ### Flow
 
 1. **Image Upload**: User selects image via web UI
-2. **Storage**: Image is sent to S3 bucket
-3. **Embedding**: Lambda generates embedding using Bedrock Nova
-4. **Indexing**: Embedding stored in S3 Vectors
-5. **Search**: Lambda queries S3 Vectors for K nearest neighbors
-6. **Results**: Similar images returned to frontend
+2. **Get Pre-signed URL**: Frontend requests `/presign` endpoint, Lambda validates size/type and generates S3 pre-signed URL (15 min expiry)
+3. **Direct S3 Upload**: Frontend uploads directly to S3 using pre-signed URL (bypasses Lambda)
+4. **Embedding**: Frontend calls `/search` endpoint with S3 key, Lambda generates embedding using Bedrock Nova
+5. **Indexing**: Embedding stored in S3 Vectors
+6. **Search**: Lambda queries S3 Vectors for K nearest neighbors
+7. **Results**: Similar images returned to frontend
 
 ### Lambda Handler
 
-The Lambda function (`search_lambda/handler.py`):
+The Lambda function (`search_lambda/handler.py`) has two endpoints:
+
+**`POST /presign`** - Generate upload URL:
+1. Validates filename and file size (max 10 MB)
+2. Validates file type (image only)
+3. Generates pre-signed URL valid for 15 minutes
+4. Returns URL and S3 key to frontend
+
+**`POST /search`** - Search for similar images:
 1. Receives S3 bucket and image key
 2. Downloads image from S3
 3. Encodes as base64
@@ -284,31 +293,60 @@ print(json.dumps(result, indent=2))
 
 ## API Specification
 
-### Request
+### POST /presign - Generate Upload URL
 
-```
-POST /search
-Content-Type: application/json
-
+**Request:**
+```json
 {
-  "bucket": "s3-vector-test-image-uploads",
-  "key": "path/to/image.jpg"
+  "filename": "image.jpg",
+  "size": 1024000
 }
 ```
 
-### Response (Success)
+**Response (Success):**
+```json
+{
+  "statusCode": 200,
+  "body": {
+    "presigned_url": "https://s3.amazonaws.com/bucket/uploads/image.jpg?...",
+    "bucket": "s3-vector-test-image-uploads",
+    "key": "uploads/image.jpg"
+  }
+}
+```
 
+**Response (Error):**
+```json
+{
+  "statusCode": 400,
+  "body": {
+    "error": "File too large. Max size is 10 MB"
+  }
+}
+```
+
+### POST /search - Search for Similar Images
+
+**Request:**
+```json
+{
+  "bucket": "s3-vector-test-image-uploads",
+  "key": "uploads/image.jpg"
+}
+```
+
+**Response (Success):**
 ```json
 {
   "statusCode": 200,
   "body": {
     "nearest_neighbors": [
       {
-        "key": "similar-image-1.jpg",
+        "key": "uploads/similar-image-1.jpg",
         "distance": 0.1234,
         "metadata": {
           "bucket": "s3-vector-test-image-uploads",
-          "key": "similar-image-1.jpg"
+          "key": "uploads/similar-image-1.jpg"
         }
       }
     ]
@@ -316,8 +354,7 @@ Content-Type: application/json
 }
 ```
 
-### Response (Error)
-
+**Response (Error):**
 ```json
 {
   "statusCode": 400,
@@ -422,11 +459,11 @@ This is a **test/demo project**. The following issues must be addressed before p
 ### Known Limitations (Test Project)
 
 - ⚠️ API Gateway allows anonymous access
-- ⚠️ CORS allows all origins
-- ⚠️ No request throttling (HTTP API limitation)
-- ⚠️ Website S3 bucket is publicly readable
+- ⚠️ CORS restricted to S3 HTTP endpoint (not production-ready HTTPS)
+- ⚠️ No rate limiting (HTTP API limitation; use WAF for production)
+- ⚠️ Website S3 bucket is publicly readable (HTTP only)
 - ⚠️ No user authentication
-- ⚠️ Minimal input validation
+- ⚠️ No malicious file scanning
 
 ## Troubleshooting
 
