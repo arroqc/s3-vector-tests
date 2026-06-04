@@ -22,15 +22,17 @@ terraform apply
 ```
 
 This will:
-1. Create an HTTP API Gateway with Lambda integration
+1. Create an HTTP API Gateway with `/presign` and `/search` endpoints
 2. Set up S3 bucket for website hosting
 3. Automatically inject the API endpoint, S3 bucket, and region into `index.html`
 4. Upload the rendered HTML to S3
+5. Configure S3 CORS for direct browser uploads
 
 After deployment, the Terraform outputs will show:
-- `api_gateway_endpoint` - Your API endpoint URL
+- `api_gateway_endpoint` - Your API endpoint URL (base URL for both endpoints)
 - `s3_bucket` - The image upload bucket
 - `s3_region` - The AWS region
+- `website_url` - Your website URL (HTTP)
 
 **No manual configuration needed.** Terraform handles everything.
 
@@ -73,36 +75,46 @@ These are then used in `app.js`:
 
 ```javascript
 const CONFIG = {
-    API_ENDPOINT: `${API_GATEWAY_URL}/search`,
+    API_ENDPOINT: `${API_GATEWAY_URL}`,  // Base URL for /presign and /search
     S3_BUCKET: S3_BUCKET,
     S3_REGION: S3_REGION,
 };
+
+// Frontend uses:
+// - ${CONFIG.API_ENDPOINT}/presign for upload URL
+// - ${CONFIG.API_ENDPOINT}/search for image search
 ```
 
 ### API Flow
 
-1. User selects/drags image
-2. Frontend sends to API Gateway `/search` endpoint
-3. API Gateway invokes Lambda function
-4. Lambda processes image and returns similar images
-5. Results displayed in UI
+1. **User selects/drags image** - File validation (size, type) happens in browser
+2. **Request presigned URL** - Frontend calls `/presign` endpoint with filename and size
+3. **Get upload URL** - Lambda validates and returns S3 pre-signed URL (valid 15 min)
+4. **Direct S3 upload** - Frontend uploads directly to S3 using pre-signed URL
+5. **Search similar images** - Frontend calls `/search` with S3 bucket and key
+6. **Lambda processes** - Lambda generates embedding via Bedrock and searches S3 Vectors
+7. **Results displayed** - Similar images with distance scores shown in UI
 
 ### API Contract
 
-The Lambda function expects:
-- **Method**: POST
-- **Path**: `/search`
-- **Body**: `{ "bucket": "...", "key": "..." }`
-- **Response**: `{ "nearest_neighbors": [...] }`
+**POST /presign** - Get upload URL:
+- **Body**: `{ "filename": "image.jpg", "size": 1024000 }`
+- **Response**: `{ "presigned_url": "...", "bucket": "...", "key": "uploads/image.jpg" }`
+- **Errors**: File too large (>10 MB), invalid file type
 
-Each neighbor should include:
+**POST /search** - Search similar images:
+- **Body**: `{ "bucket": "s3-vector-test-image-uploads", "key": "uploads/image.jpg" }`
+- **Response**: `{ "nearest_neighbors": [...] }`
+- **Errors**: Missing bucket/key
+
+Each neighbor in response includes:
 ```json
 {
-  "key": "image-key",
+  "key": "uploads/similar-image.jpg",
   "distance": 0.1234,
   "metadata": {
-    "bucket": "bucket-name",
-    "key": "image-key"
+    "bucket": "s3-vector-test-image-uploads",
+    "key": "uploads/similar-image.jpg"
   }
 }
 ```
